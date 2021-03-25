@@ -166,7 +166,8 @@ for bagFile in listOfBagFiles:
     
     fall_index=np.where(filtered[:,8]<9.81/5)   # gives an array of index where ...
     if len(fall_index)>0:
-        result=[pipe_id,filtered[0,2],filtered[0,1],filtered[fall_index[0][0],2],filtered[fall_index[0][0],1]]
+        slip_index=np.where(filtered[:,8]>filtered[0,8]*.95) # find the final point of where it hasn't slipped
+        result=[pipe_id,filtered[0,2],filtered[0,1],filtered[slip_index[0][-1],2],filtered[slip_index[0][-1],1]]
     else:
         result=[pipe_id,filtered[0,2],filtered[0,1],'-',0]
     
