@@ -11,13 +11,14 @@ Supervised by Professor Inna Sharf, Professor Meyer Nahon
 Edited by PandaPilot to post-process data
 '''
 
-import rosbag, sys, csv
+import rosbag, sys, csv, math
 import time
-import string
+#import string
 import numpy as np
 import os #for file management make directory
 import shutil #for file management, copy file
-from datetime import datetime
+from scipy.spatial.transform import Rotation as R
+#from datetime import datetime
 
 
 
@@ -47,7 +48,10 @@ else:
     sys.exit(1)
 
 count = 0
-wc=70 # butterworth cutoff frequency
+w_data=60
+wc=20 # butterworth cutoff frequency
+dt=1/wc
+Results=[['Pipe_ID','roll_i','I_max','roll_f','I_f']] # pipe id, roll angle, initial current, roll angle at fall, current at fall
 for bagFile in listOfBagFiles:
     count += 1
     print ("reading file " + str(count) + " of  " + numberOfFiles + ": " + bagFile)
@@ -59,6 +63,7 @@ for bagFile in listOfBagFiles:
 
     	#create a new directory
     folder = bagName.rstrip(".bag")
+    pipe_id=folder[-4:] # must manually add pipe id to bag "...f075.bag" by (c)oarse/(m/f)/(n)one and diameter (3sf)
     try:	#else already exists
         os.makedirs(folder)
     except:
@@ -110,35 +115,62 @@ for bagFile in listOfBagFiles:
     # Data out (in order from left-right):
     # time roll(pwm) pitch(pwm) thrust(pwm) yawrate(pwm) x y z roll(rad) pitch(rad) yaw(rad)  vx vy vz wx wy wz
 #
-#    dataname1=(folder + '/_slash_Flight_Data.csv')
-#    dataname2=(folder + '/Flight_Data.csv')
+    data1=(folder + '/_slash_dynamixel_workbench_slash_dynamixel_state.csv')
+    data2=(folder + '/_slash_mavros_slash_imu_slash_data.csv')
 #    if os.path.exists(dataname1) or os.path.exists(dataname2): # Check for both naming conventions
 #        if os.path.exists(dataname1):
 #            dataname=dataname1
 #        else:
 #            dataname=dataname2
 #        print(dataname)
-#        with open(dataname, 'rt') as f:
-#            Processing = 0
-#            k=0
-#            data = list(csv.reader(f))
-#    
-#        #for row in reader:
-#            # row is a list of strings
-#            # use string.join to put them together
-#            #print(row[0])
-#            print(np.shape(data))
-#    #        for i in range(1,len(data)-1):
-#    #            if data[i][7]=='"Position"' or data[i][7]=='"MPC"':
-#    #                processed=np.zeros((len(data)-i+1,18))
-#    #                break
-#
-#            #check which file corrupted with extra columns
-#            searcher = dataname[5:15]
-#            searcherdate = datetime.strptime(searcher, '%Y-%m-%d')
-#            comparer = datetime(2019, 8, 26)
-#            
-#            if searcherdate > comparer:
+    with open(data1, 'rt') as f1:
+        servo = list(csv.reader(f1))
+    with open(data2, 'rt') as f2:
+        imu = list(csv.reader(f2))
+#   
+    del servo[0] # remove column title
+    servo=np.array(servo) # to array form for easier manipulation
+    time_servo=np.float_(servo[:,0])*pow(10,-9) # get servo rosbag time
+    
+    del imu[0]
+    imu=np.array(imu)  
+    time_imu=np.float_(imu[:,0])*pow(10,-9)
+    r = R.from_quat(np.float_(imu[:,8:12]))
+    
+    ang_d=r.as_euler('xyz', degrees=True)    # convert quat to deg
+    v_ang=np.float_(imu[:,14:17])/math.pi*180# convert rad/s to deg/s
+    
+    time_imu=time_imu-time_servo[0]
+    time_servo=time_servo-time_servo[0]
+    
+    time_end=min(time_imu[-1],time_servo[-1])   # get earliest end
+    
+    time=np.arange(0,time_end,1/w_data)
+    processed=np.zeros((len(time),9)) # time current ang.x ang.y ang.z rate.x rate.y rate.z accel.total
+    filtered=processed
+    processed[:,0]=time
+    processed[:,1]=np.interp(time,time_servo,np.float_(servo[:,6]))
+    processed[:,2]=np.interp(time,time_imu,ang_d[:,0])
+    processed[:,3]=np.interp(time,time_imu,ang_d[:,1])
+    processed[:,4]=np.interp(time,time_imu,ang_d[:,2])
+    processed[:,5]=np.interp(time,time_imu,v_ang[:,0])
+    processed[:,6]=np.interp(time,time_imu,v_ang[:,1])
+    processed[:,7]=np.interp(time,time_imu,v_ang[:,2])
+    processed[:,8]=np.interp(time,time_imu,pow(np.sum(pow(np.float_(imu[:,19:22]),2),axis=1),.5)) #total acceleration root(sum(square(make float)))
+
+    filtered[:,0]=time
+    filtered[0:3,1:-1]=processed[0:3,1:-1]
+    for k in range(3,len(time)-1):
+        filtered[k,1:-1]=1/(1+4*dt*wc+2*pow(dt,2)*pow(wc,2)+pow(dt,3)*pow(wc,3))*(pow(dt,3)*pow(wc,3)*processed[k,1:-1]+(3+10*dt*wc+2*pow(dt,2)*pow(wc,2))*filtered[k-1,1:-1]-(3+8*dt*wc)*filtered[k-2,1:-1]+(1+2*dt*wc)*filtered[k-3,1:-1])
+    filtered=np.delete(filtered, np.s_[0:np.argmax(filtered[:,1])], 0) # remove pre-grip data
+    
+    fall_index=np.where(filtered[:,8]<9.81/5)   # gives an array of index where ...
+    if len(fall_index)>0:
+        result=[pipe_id,filtered[0,2],filtered[0,1],filtered[fall_index[0][0],2],filtered[fall_index[0][0],1]]
+    else:
+        result=[pipe_id,filtered[0,2],filtered[0,1],'-',0]
+    
+    Results.append(result)
 #                print('Data corrupted')
 #                lag1 = 5
 #                lag2 = 5+2
@@ -179,5 +211,10 @@ for bagFile in listOfBagFiles:
 #            filename_processed=folder + '/Processed.csv'
 #            np.savetxt(filename_processed, processed, delimiter=",", header="time,dt,R,P,T,Y,x,y,z,r,p,y,vx,vy,vz,wx,wy,wz")
 #
-
+with open('Results', 'w') as f3:
+      
+    # using csv.writer method from CSV package
+    write = csv.writer(f3)
+      
+    write.writerow(Results)
 print ("Done reading all " + numberOfFiles + " bag files.")
