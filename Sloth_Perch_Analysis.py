@@ -63,7 +63,7 @@ for bagFile in listOfBagFiles:
 
     	#create a new directory
     folder = bagName.rstrip(".bag")
-    pipe_id=folder[-4:] # must manually add pipe id to bag "...f075.bag" by (c)oarse/(m/f)/(n)one and diameter (3sf)
+    pipe_id=folder[:4] # must manually add pipe id to bag "...f075.bag" by (c)oarse/(m/f)/(n)one and diameter (3sf)
     try:	#else already exists
         os.makedirs(folder)
     except:
