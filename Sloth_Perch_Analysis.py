@@ -51,7 +51,7 @@ count = 0
 w_data=60
 wc=20 # butterworth cutoff frequency
 dt=1/wc
-Results=[['Pipe_ID','roll_i','I_max','roll_f','I_f']] # pipe id, roll angle, initial current, roll angle at fall, current at fall
+Results=[['Coarseness','OD','roll_i','I_max','roll_f','I_f']] # pipe id, roll angle, initial current, roll angle at fall, current at fall
 for bagFile in listOfBagFiles:
     count += 1
     print ("reading file " + str(count) + " of  " + numberOfFiles + ": " + bagFile)
@@ -63,7 +63,8 @@ for bagFile in listOfBagFiles:
 
     	#create a new directory
     folder = bagName.rstrip(".bag")
-    pipe_id=folder[:4] # must manually add pipe id to bag "...f075.bag" by (c)oarse/(m/f)/(n)one and diameter (3sf)
+    pipe_coarse=folder[0] # must manually add pipe id to bag "...f075.bag" by (c)oarse/(m/f)/(n)one and diameter (3sf)
+    pipe_od=folder[1:4]
     try:	#else already exists
         os.makedirs(folder)
     except:
@@ -147,9 +148,11 @@ for bagFile in listOfBagFiles:
     
     time=np.arange(0,time_end,1/w_data)
     processed=np.zeros((len(time),9)) # time current ang.x ang.y ang.z rate.x rate.y rate.z accel.total
-    filtered=processed
+    filtered=np.zeros((len(time),11))
     processed[:,0]=time
-    processed[:,1]=np.interp(time,time_servo,np.float_(servo[:,6]))
+    processed[:,1]=np.interp(time,time_servo,np.float_(servo[:,6]))*2.69 # x2.69 mA per step
+    processed[np.where(processed[:,1]>1193*2.69),1]=0 # denoise, max current step = 1193
+    processed[np.where(processed[:,1]<-1193*2.69),1]=0 # denoise, max current step = 1193
     processed[:,2]=np.interp(time,time_imu,ang_d[:,0])
     processed[:,3]=np.interp(time,time_imu,ang_d[:,1])
     processed[:,4]=np.interp(time,time_imu,ang_d[:,2])
@@ -159,63 +162,33 @@ for bagFile in listOfBagFiles:
     processed[:,8]=np.interp(time,time_imu,pow(np.sum(pow(np.float_(imu[:,19:22]),2),axis=1),.5)) #total acceleration root(sum(square(make float)))
 
     filtered[:,0]=time
-    filtered[0:3,1:-1]=processed[0:3,1:-1]
+    filtered[0:3,1:-2]=processed[0:3,1:]
     for k in range(3,len(time)-1):
-        filtered[k,1:-1]=1/(1+4*dt*wc+2*pow(dt,2)*pow(wc,2)+pow(dt,3)*pow(wc,3))*(pow(dt,3)*pow(wc,3)*processed[k,1:-1]+(3+10*dt*wc+2*pow(dt,2)*pow(wc,2))*filtered[k-1,1:-1]-(3+8*dt*wc)*filtered[k-2,1:-1]+(1+2*dt*wc)*filtered[k-3,1:-1])
-    filtered=np.delete(filtered, np.s_[0:np.argmax(filtered[:,1])], 0) # remove pre-grip data
+        filtered[k,1:-2]=1/(1+4*dt*wc+2*pow(dt,2)*pow(wc,2)+pow(dt,3)*pow(wc,3))*(pow(dt,3)*pow(wc,3)*processed[k,1:]+(3+10*dt*wc+2*pow(dt,2)*pow(wc,2))*filtered[k-1,1:-2]-(3+8*dt*wc)*filtered[k-2,1:-2]+(1+2*dt*wc)*filtered[k-3,1:-2])
+    time15=np.where(time<15)    
+    filtered=np.delete(filtered, np.s_[0:np.argmax(filtered[time15,1])], 0) # remove pre-grip data
+    filtered[abs(filtered[:,1])<1e-6,1]=0
+    a=np.where(filtered[:,1]==0)
+    if len(a[0])>3:
+        filtered=np.delete(filtered, np.s_[(a[0][0]+2):], 0) # remove after zero current data
     
-    fall_index=np.where(filtered[:,8]<9.81/5)   # gives an array of index where ...
-    if len(fall_index)>0:
-        slip_index=np.where(filtered[:,8]>filtered[0,8]*.95) # find the final point of where it hasn't slipped
-        result=[pipe_id,filtered[0,2],filtered[0,1],filtered[slip_index[0][-1],2],filtered[slip_index[0][-1],1]]
+    fall_index=np.where(np.logical_or(filtered[:,8]<9.81/2,filtered[:,8]>13))   # gives an array of index where ...
+
+    if len(fall_index[0])>0:
+        slip_index=np.where(filtered[:fall_index[0][0],8]>filtered[0,8]*.95) # find the final point of where it hasn't slipped
+        result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],filtered[slip_index[0][-1],2],filtered[slip_index[0][-1],1]]
+        filtered[0,9]=filtered[slip_index[0][-1],0]
+        filtered[0,10]=filtered[slip_index[0][-1],1]
     else:
-        result=[pipe_id,filtered[0,2],filtered[0,1],'-',0]
+        result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],'-',0]
     
     Results.append(result)
-#                print('Data corrupted')
-#                lag1 = 5
-#                lag2 = 5+2
-#            else:
-#                lag1, lag2 = 0,0
-#                
-#            processed=np.zeros((len(data)-2,18))
-#            time=np.float_(column(data,4)[1:len(data)])+np.float_(column(data,5)[1:len(data)])/10**9-(float(data[1][4])+float(data[1][5])/10**9) # message publish time        
-#            processed[:,0]=time[0:len(processed)]  
-#            processed[:,1]=float(data[0:len(data)])
-#            dt=time[1]-time[0]
-#            y=np.zeros(len(time))
-#            for k in range(3,len(time)-1):
-#                y(k)=1/(1+4*dt*wc+2*dt^2*wc^2+dt^3*wc^3)*(dt^3*wc^3*u(k)+(3+10*dt*wc+2*dt^2*wc^2)*y(k-1)-(3+8*dt*wc)*y(k-2)+(1+2*dt*wc)*y(k-3));
-#            processed[:,2]=(np.float_(column(data,16+lag1)[1:(len(processed)+1)])-1500)/1000 # Roll pwm scaled
-#            processed[:,3]=(np.float_(column(data,17+lag1)[1:(len(processed)+1)])-1500)/1000 # Pitch pwm scaled
-#            processed[:,4]=(np.float_(column(data,18+lag1)[1:(len(processed)+1)])-1000)/1000 # Thrust pwm scaled
-#            processed[:,5]=(np.float_(column(data,19+lag1)[1:(len(processed)+1)])-1500)/1000 # Yawrate pwm scaled
-#            if (np.shape(data)[1]>=53):
-#                for j in range(6,18):
-#                    processed[:,j] = np.float_(column(data,j+17+lag2)[1:(len(processed)+1)]) # x y z roll pitch yaw vx vy vz wx wy wz
-#            else:
-#                for j in range(6,18):
-#                    processed[:,j] = np.float_(column(data,j+14+lag2)[1:(len(processed)+1)]) # x y z roll pitch yaw vx vy vz wx wy wz
-#    
-#            for i in range(1,len(processed)-1): # remove ground contact        
-#
-#                if processed[i][8]>-0.0001 and processed[i][8]<0:
-#                    processed[i][8]=0.0
-#                elif processed[i][8]<=-0.0001:
-#                    print(processed[i][8])
-#                    processed=np.delete(processed,list(range(i,len(processed))),0)
-#                    #print('break')
-#                    break
-#
-#            processed=processed[~np.all(processed == 0, axis=1)] # not sure if we still need this
-#            print(np.shape(processed))
-#            filename_processed=folder + '/Processed.csv'
-#            np.savetxt(filename_processed, processed, delimiter=",", header="time,dt,R,P,T,Y,x,y,z,r,p,y,vx,vy,vz,wx,wy,wz")
-#
-with open('Results', 'w') as f3:
+    filename_processed=folder + '/Processed.csv'
+    np.savetxt(filename_processed, filtered, delimiter=",", header="time,current,ang.x, ang.y, ang.z, rate.x, rate.y, rate.z, accel.total, fall time, fall current")
+
+with open('Results.csv', 'w') as f3:
       
     # using csv.writer method from CSV package
     write = csv.writer(f3)
-      
-    write.writerow(Results)
+    write.writerows(Results)
 print ("Done reading all " + numberOfFiles + " bag files.")
