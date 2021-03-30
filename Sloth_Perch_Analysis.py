@@ -167,12 +167,12 @@ for bagFile in listOfBagFiles:
         filtered[k,1:-2]=1/(1+4*dt*wc+2*pow(dt,2)*pow(wc,2)+pow(dt,3)*pow(wc,3))*(pow(dt,3)*pow(wc,3)*processed[k,1:]+(3+10*dt*wc+2*pow(dt,2)*pow(wc,2))*filtered[k-1,1:-2]-(3+8*dt*wc)*filtered[k-2,1:-2]+(1+2*dt*wc)*filtered[k-3,1:-2])
     time15=np.where(time<15)    
     filtered=np.delete(filtered, np.s_[0:np.argmax(filtered[time15,1])], 0) # remove pre-grip data
-    filtered[abs(filtered[:,1])<1e-6,1]=0
+    filtered[abs(filtered[:,1])<0,1]=0
     a=np.where(filtered[:,1]==0)
     if len(a[0])>3:
         filtered=np.delete(filtered, np.s_[(a[0][0]+2):], 0) # remove after zero current data
     
-    fall_index=np.where(np.logical_or(filtered[:,8]<9.81/2,filtered[:,8]>13))   # gives an array of index where ...
+    fall_index=np.where(np.logical_or(filtered[:,8]<8,filtered[:,8]>12))   # gives an array of index where ...
 
     if len(fall_index[0])>0:
         slip_index=np.where(filtered[:fall_index[0][0],8]>filtered[0,8]*.95) # find the final point of where it hasn't slipped
