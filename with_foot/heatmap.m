@@ -6,12 +6,12 @@ end
 
 coarseness=unique(Results.Coarseness);
 od=unique(Results.OD);
-angles=[0:10:180];
+angles=[0:10:100];
 heat=zeros(length(angles),length(od));
 figure(1)
 figure(2)
 for i=1:length(coarseness)
-    if coarseness(i)=='c'||coarseness(i)=='f'
+    if coarseness(i)=='n'
         data=table2array(Results(Results.Coarseness==coarseness(i),[2,3,6])); % with columns OD roll_i I_f
         data(:,2)=abs(data(:,2)); % negative roll = positive roll
         data(data(:,2)>180,2)=360-data(data(:,2)>180,2);
@@ -34,7 +34,7 @@ for i=1:length(coarseness)
         [A,B]=meshgrid(od,angles);
         surf(A,B,heat)
         xlabel('Diameter (mm)')
-        ylabel('Current (mA)')
+        ylabel('Angle (deg)')
     end
 end
 hold off
