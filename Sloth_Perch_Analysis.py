@@ -176,9 +176,14 @@ for bagFile in listOfBagFiles:
 
     if len(fall_index[0])>0:
         slip_index=np.where(filtered[:fall_index[0][0],8]>filtered[0,8]*.95) # find the final point of where it hasn't slipped
-        result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],filtered[slip_index[0][-1],2],filtered[slip_index[0][-1],1]]
-        filtered[0,9]=filtered[slip_index[0][-1],0]
-        filtered[0,10]=filtered[slip_index[0][-1],1]
+        if len(slip_index[0])==0:
+            result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],filtered[fall_index[0][-1],2],filtered[fall_index[0][-1],1]]
+            filtered[0,9]=filtered[fall_index[0][-1],0]
+            filtered[0,10]=filtered[fall_index[0][-1],1]
+        else:
+            result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],filtered[slip_index[0][-1],2],filtered[slip_index[0][-1],1]]
+            filtered[0,9]=filtered[slip_index[0][-1],0]
+            filtered[0,10]=filtered[slip_index[0][-1],1]
     else:
         result=[pipe_coarse,pipe_od,filtered[0,2],filtered[0,1],'-',0]
     
