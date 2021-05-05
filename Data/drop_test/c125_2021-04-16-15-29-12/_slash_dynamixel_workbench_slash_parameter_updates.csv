@@ -1,0 +1,9 @@
+rosbagTimestamp,bools,-,name,value,-,name,value,-,name,value,ints,-,name,value,-,name,value,strs,doubles,-,name,value,groups,-,name,state,id,parent
+1618583352339758206,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583366790099894,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583372710973397,,"""Start""",False,"""Reset""",True,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583373226969666,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583529387376332,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583556770965678,,"""Start""",False,"""Reset""",True,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583559159737383,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0
+1618583817844263330,,"""Start""",False,"""Reset""",False,"""Reboot""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,[],,"""Ramp_K""",10.0,,"""Default""",True,0,0

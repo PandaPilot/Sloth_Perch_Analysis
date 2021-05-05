@@ -1,0 +1,3 @@
+rosbagTimestamp,bools,-,name,value,-,name,value,-,name,value,-,name,value,ints,-,name,value,-,name,value,-,name,value,strs,doubles,-,name,value,-,name,value,groups,-,name,state,id,parent
+1619719022948924479,,"""Start""",False,"""Reset""",False,"""Reboot""",False,"""Drop_test""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,"""Reset_position""",900,[],,"""Ramp_K""",10.0,"""Delay""",0.3,,"""Default""",True,0,0
+1619719057048120030,,"""Start""",False,"""Reset""",False,"""Reboot""",False,"""Drop_test""",False,,"""Grip_Current""",400,"""Ramp_Start_Current""",200,"""Reset_position""",900,[],,"""Ramp_K""",10.0,"""Delay""",0.3,,"""Default""",True,0,0
