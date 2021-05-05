@@ -1,6 +1,6 @@
-if(exist("Results"))
+if(exist("./no_foot/Results"))
 else
-    open('Results.csv')
+    open('./no_foot/Results.csv')
     input('Import then hit Enter')
 end
 
