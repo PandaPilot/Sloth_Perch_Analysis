@@ -56,7 +56,6 @@ if ~exist('processed')
         Data(i).az_imu=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).az_imu,Data(i).t)-9.80665;
         Data(i).servo_pos=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).servo_pos,Data(i).t);
         
-        %% remove NaN and post perch data
         while(isnan(Data(i).x(end))||isnan(Data(i).y(end))||isnan(Data(i).z(end)) ...
                 ||isnan(Data(i).vx(end))||isnan(Data(i).vy(end))||isnan(Data(i).vz(end)) ...
                 ||isnan(Data(i).ax_imu(end))||isnan(Data(i).ay_imu(end))||isnan(Data(i).az_imu(end))) % remove NaN
@@ -70,9 +69,7 @@ if ~exist('processed')
             Data(i).ax_imu(end)=[];
             Data(i).ay_imu(end)=[];
             Data(i).az_imu(end)=[];
-            Data(i).servo_pos(end)=[];
         end
-        
         %% calculate vicon accel using central difference
         Data(i).ax=(Data(i).vx(3:end)-Data(i).vx(1:end-2))/(2*Data(i).Dt);
         Data(i).ay=(Data(i).vy(3:end)-Data(i).vy(1:end-2))/(2*Data(i).Dt);
@@ -88,7 +85,6 @@ if ~exist('processed')
         Data(i).ax_imu(end)=[];
         Data(i).ay_imu(end)=[];
         Data(i).az_imu(end)=[];
-        Data(i).servo_pos(end)=[];
         Data(i).t(end)=[]; % repeat delete end to simplify t0=0
         Data(i).x(1)=[];
         Data(i).y(1)=[];
@@ -99,8 +95,7 @@ if ~exist('processed')
         Data(i).ax_imu(1)=[];
         Data(i).ay_imu(1)=[];
         Data(i).az_imu(1)=[];
-        Data(i).servo_pos(1)=[];
-%         Data(i).servo_pos(max(Data(i).servo_pos)
+        
         %% accel filtering
         Data(i).ax_filter(1:3)=Data(i).ax(1:3);
         Data(i).ay_filter(1:3)=Data(i).ay(1:3);
