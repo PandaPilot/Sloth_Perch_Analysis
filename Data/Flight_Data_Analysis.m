@@ -2,14 +2,13 @@
 folders=dir('hover_drop');
 n_folder=size(folders,1);
 if ~exist('n_data')
-    
     k=0;
     for i=1:n_folder
         dum_name =join([folders(i).folder,'\',folders(i).name,'\_slash_Flight_Data.csv']);
         dum_name1=join([folders(i).folder,'\',folders(i).name,'\_slash_mavros_slash_imu_slash_data.csv']);
         dum_name2=join([folders(i).folder,'\',folders(i).name,'\_slash_dynamixel_workbench_slash_dynamixel_state.csv']);
         
-        if exist(dum_name) && contains(folders(i).name,'05-05') && ~contains(folders(i).name,'05-05-14');
+        if exist(dum_name) && contains(folders(i).name,'05-05') && ~contains(folders(i).name,'05-05-14')
             Data_raw(i-k).name=folders(i).name;
             Data_raw(i-k).FD=readtable(dum_name);
             Data_raw(i-k).IMU=readtable(dum_name1);
@@ -30,31 +29,33 @@ if ~exist('processed')
     wc=40; % butterworth cutoff freq
     for i=1:n_data
         Data(i).t_raw=Data(i).FD.secs+Data(i).FD.nsecs*1e-9;
+        index_t0=find(all(cell2mat(Data(i).FD.Status)=='"Disarmed"',2),1,'first');  % find the index of first "Disarmed"
         
-        t=Data(i).IMU.secs+Data(i).IMU.nsecs*1e-9;
-        Data(i).ax_imu=interp1(t,Data(i).IMU.x_2,Data(i).t_raw);
-        Data(i).ay_imu=interp1(t,Data(i).IMU.y_2,Data(i).t_raw);
-        Data(i).az_imu=interp1(t,Data(i).IMU.z_2,Data(i).t_raw);
+        t=Data(i).IMU.secs+Data(i).IMU.nsecs*1e-9-Data(i).t_raw(index_t0);
+        Data(i).ax_imu=interp1(t,Data(i).IMU.x_2,Data(i).t_raw-Data(i).t_raw(index_t0));
+        Data(i).ay_imu=interp1(t,Data(i).IMU.y_2,Data(i).t_raw-Data(i).t_raw(index_t0));
+        Data(i).az_imu=interp1(t,Data(i).IMU.z_2,Data(i).t_raw-Data(i).t_raw(index_t0));
         
-        t=Data(i).Ser.Var1*1e-9;
-        Data(i).servo_pos=interp1(t,Data(i).Ser.Var5,Data(i).t_raw);
+        t=Data(i).Ser.Var1*1e-9-Data(i).t_raw(index_t0);
+        Data(i).servo_pos=interp1(t,Data(i).Ser.Var5,Data(i).t_raw-Data(i).t_raw(index_t0));
         
         %Data(i).t_raw=Data(i).t_raw-Data(i).t_raw(1);
         Data(i).dt=Data(i).t_raw(2:end)-Data(i).t_raw(1:end-1);
         Data(i).Dt=mean(Data(i).dt); % find mean timestep
-        Data(i).t=(1:length(Data(i).FD.rosbagTimestamp))'*Data(i).Dt;
+        Data(i).t=((0:length(Data(i).FD.rosbagTimestamp)-1)-index_t0)'*Data(i).Dt;
         
         %% interpolate position and velocity with mean timestep
-        Data(i).x=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.x,Data(i).t);
-        Data(i).y=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.y,Data(i).t);
-        Data(i).z=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.z,Data(i).t);
-        Data(i).vx=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.vx,Data(i).t);
-        Data(i).vy=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.vy,Data(i).t);
-        Data(i).vz=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).FD.vz,Data(i).t);
-        Data(i).ax_imu=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).ax_imu,Data(i).t);
-        Data(i).ay_imu=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).ay_imu,Data(i).t);
-        Data(i).az_imu=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).az_imu,Data(i).t)-9.80665;
-        Data(i).servo_pos=interp1(Data(i).t_raw-Data(i).t_raw(1),Data(i).servo_pos,Data(i).t);
+        t=Data(i).t_raw-Data(i).t_raw(index_t0);
+        Data(i).x=interp1(t,Data(i).FD.x,Data(i).t);
+        Data(i).y=interp1(t,Data(i).FD.y,Data(i).t);
+        Data(i).z=interp1(t,Data(i).FD.z,Data(i).t);
+        Data(i).vx=interp1(t,Data(i).FD.vx,Data(i).t);
+        Data(i).vy=interp1(t,Data(i).FD.vy,Data(i).t);
+        Data(i).vz=interp1(t,Data(i).FD.vz,Data(i).t);
+        Data(i).ax_imu=interp1(t,Data(i).ax_imu,Data(i).t);
+        Data(i).ay_imu=interp1(t,Data(i).ay_imu,Data(i).t);
+        Data(i).az_imu=interp1(t,Data(i).az_imu,Data(i).t)-9.80665;
+        Data(i).servo_pos=interp1(t,Data(i).servo_pos,Data(i).t);
         
         %% remove NaN and post perch data
         while(isnan(Data(i).x(end))||isnan(Data(i).y(end))||isnan(Data(i).z(end)) ...
@@ -100,7 +101,24 @@ if ~exist('processed')
         Data(i).ay_imu(1)=[];
         Data(i).az_imu(1)=[];
         Data(i).servo_pos(1)=[];
-%         Data(i).servo_pos(max(Data(i).servo_pos)
+        j=length(Data(i).servo_pos);
+        while Data(i).servo_pos(j)<max(Data(i).servo_pos)
+            Data(i).t(end)=[];
+            Data(i).x(end)=[];
+            Data(i).y(end)=[];
+            Data(i).z(end)=[];
+            Data(i).vx(end)=[];
+            Data(i).vy(end)=[];
+            Data(i).vz(end)=[];
+            Data(i).ax_imu(end)=[];
+            Data(i).ay_imu(end)=[];
+            Data(i).az_imu(end)=[];
+            Data(i).ax(end)=[];
+            Data(i).ay(end)=[];
+            Data(i).az(end)=[];
+            Data(i).servo_pos(end)=[];
+            j=j-1;
+        end
         %% accel filtering
         Data(i).ax_filter(1:3)=Data(i).ax(1:3);
         Data(i).ay_filter(1:3)=Data(i).ay(1:3);
@@ -123,13 +141,68 @@ if ~exist('processed')
             Data(i).az_imufilter(j)=(1+4*Data(i).Dt*wc+2*Data(i).Dt^2*wc^2+Data(i).Dt^3*wc^3)^-1 ...
                 *(Data(i).Dt^3*wc^3*Data(i).az_imu(j)+(3+10*Data(i).Dt*wc+2*Data(i).Dt^2*wc^2)*Data(i).az_imufilter(j-1)-(3+8*Data(i).Dt*wc)*Data(i).az_imufilter(j-2)+(1+2*Data(i).Dt*wc)*Data(i).az_imufilter(j-3));
         end
+        if Data(i).z(end)>0.4
+            Data(i).perch=1;
+        else
+            Data(i).perch=0;
+        end
         processed=1;
     end
 else
     disp('Skip processing')
 end
+
+close all
+% figure % end z position
+% for i=1:n_data
+%     plot(i,Data(i).z(end),'*');
+%     hold on
+% end
+% grid on
+
+figure % t-z graph
 for i=1:n_data
-    plot(i,Data(i).z(end),'*');
+    if Data(i).perch
+        plot(Data(i).t,Data(i).z);
+    else
+        plot(Data(i).t,Data(i).z,'--');
+    end
     hold on
-    disp(Data(i).z(end));
 end
+xlim([-0.5 1.5])
+grid on
+
+figure % 3D xyz
+for i=1:n_data
+    index_t=Data(i).t>=-1 & Data(i).t<=1.5;
+    if Data(i).perch
+        plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'LineWidth',2);
+    else
+        plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'--');
+    end
+    hold on
+end
+axis equal
+grid on
+
+figure % xyz at impact
+for i=1:n_data
+    if Data(i).perch
+        plot3(Data(i).x(end),Data(i).y(end),Data(i).z(end),'o');
+    else
+%         plot(Data(i).x(index_t),Data(i).y(index_t),'*');
+    end
+    hold on
+end
+axis equal
+grid on
+% 
+% figure % need to plot impact velocity
+% for i=1:n_data
+%     if Data(i).perch
+%        plot(1,Data(i).vz(Data(i).t==0),'*')
+%     else
+%         plot(0,Data(i).vz(Data(i).t==0),'*')
+%     end
+%     hold on
+% end
