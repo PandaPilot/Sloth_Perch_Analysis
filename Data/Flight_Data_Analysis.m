@@ -24,7 +24,7 @@ else
     disp('Skip data acquisition')
 end
 
-if ~exist('processed')
+if ~exist('processed')||~processed
     Data=Data_raw; % create a copy, DO NOT CLEAR Data_raw OR k, else data acquisition will run.
     wc=40; % butterworth cutoff freq
     for i=1:n_data
@@ -192,7 +192,10 @@ if ~exist('processed')
         
         %% use max jerk-z as impact
         Data(i).jz(2:end)=(Data(i).az_filter(2:end)-Data(i).az_filter(1:end-1))/Data(i).Dt;
-        Data(i).index_impact=Data(i).jz==max(Data(i).jz);
+        tmp=find(Data(i).z<0.7,1,'first');
+        tmp1=find(Data(i).z>0.5,1,'last');
+        %tmp=find(Data(i).jz==max(Data(i).jz));
+        Data(i).index_impact=Data(i).vz==min(Data(i).vz(tmp:tmp1));
         
         processed=1;
     end
@@ -233,63 +236,155 @@ for i=1:n_data
 end
 axis equal
 grid on
-
-figure % xyz at impact
-for i=1:n_data
-    if Data(i).perch
-        plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'o');
-    else
-        plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'x');
-    end
-    hold on
-end
-axis equal
-grid on
-
-figure % analytics
-plts=5;
-for i=1:n_data
-    subplot(plts,1,1);
-    scatter(Data(i).perch,Data(i).x(Data(i).index_impact));
-    ylabel('x')
-    hold on
-    grid on
-    subplot(plts,1,2);
-    scatter(Data(i).perch,Data(i).vz(Data(i).index_impact));
-    ylabel('vz')
-    hold on
-    grid on
-    subplot(plts,1,3);
-    scatter(Data(i).perch,Data(i).servo_pos(Data(i).index_impact));
-    ylabel('servo pos')
-    hold on
-    grid on
-    subplot(plts,1,4);
-    if Data(i).perch
-        scatter(Data(i).delay,Data(i).z(Data(i).t==0));
-    end
-    xlabel('delay')
-    ylabel('z')
-    hold on
-    grid on
-    subplot(plts,1,5);
-    if Data(i).perch
-        scatter(Data(i).delay,Data(i).servo_pos(Data(i).index_impact));
-    end
-    xlabel('delay')
-    ylabel('servo pos')
-    hold on
-    grid on
-end
-
-
 %
-% figure % need to plot impact velocity
+% figure % xyz at impact
 % for i=1:n_data
 %     if Data(i).perch
-%        plot(1,Data(i).vz(Data(i).t==0),'*')
+%         plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'o');
 %     else
-%         plot(0,Data(i).vz(Data(i).t==0),'*')
+%         plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'x');
 %     end
 %     hold on
 % end
+% xlabel('x')
+% ylabel('y')
+% axis equal
+% grid on
+%
+% k=1;
+% k2=1;
+% figure % analytics
+% plts=5;
+% for i=1:n_data
+%     subplot(1,plts,1);
+%     scatter(Data(i).perch,Data(i).x(Data(i).index_impact));
+%     ylabel('x')
+%     hold on
+%     grid on
+%     subplot(1,plts,2);
+%     scatter(Data(i).perch,Data(i).vz(Data(i).index_impact));
+%     if(Data(i).perch)
+%         vz_good(k)=Data(i).vz(Data(i).index_impact);
+%         k=k+1;
+%     else
+%         vz_bad(k2)=Data(i).vz(Data(i).index_impact);
+%         k2=k2+1;
+%     end
+%     ylabel('vz')
+%     hold on
+%     grid on
+%     subplot(1,plts,3);
+%     scatter(Data(i).perch,Data(i).servo_pos(Data(i).index_impact));
+%     ylabel('servo pos')
+%     hold on
+%     grid on
+%     subplot(1,plts,4);
+%     if Data(i).perch
+%         scatter(Data(i).delay,Data(i).z(Data(i).t==0));
+%     end
+%     xlabel('delay')
+%     ylabel('z')
+%     hold on
+%     grid on
+%     subplot(1,plts,5);
+%     if Data(i).perch
+%         scatter(Data(i).delay,Data(i).servo_pos(Data(i).index_impact));
+%     end
+%     xlabel('delay')
+%     ylabel('servo pos')
+%     hold on
+%     grid on
+% end
+
+% figure
+% plot(vz_good,'o')
+% hold on
+% plot(vz_bad,'*')
+
+%% x and vz at impact
+
+figure
+hold on
+for i=1:n_data
+    if Data(i).perch
+        perch_servo_pos(i)=Data(i).servo_pos(Data(i).index_impact);
+        a=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'o');
+        a.MarkerEdgeColor=[0.4660 0.6740 0.1880];
+        a.MarkerFaceColor=[0.4660 0.6740 0.1880];
+    end
+end
+for i=1:n_data
+    if ~Data(i).perch
+        if Data(i).servo_pos(Data(i).index_impact)<=max(perch_servo_pos) && Data(i).servo_pos(Data(i).index_impact)>=min(perch_servo_pos(perch_servo_pos>0))
+            b=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'x');
+            b.MarkerEdgeColor=[0.6350 0.0780 0.1840];
+            b.MarkerSize=8;
+            b.LineWidth=1;
+        end
+    end
+end
+xlabel('servo pos')
+ylabel('v_z')
+%axis equal
+grid on
+%
+x=meshgrid([-110:.1:110]);
+y=x';
+z=zeros(size(x));
+z_zone=[100,75,50,10;5^2,25^2,50^2,70^2];
+drone=z+z_zone(2);
+drone=[-10,-10,10,10,-8,-8 8,8,-8,-8,-10;10,0,0,10,10,8.5,8.5,1.5,1.5,10,10];
+% drone(x>-10&x<10&y>0&y<10)=100;
+% drone(x>-8&x<8&y>1.5&y<8.5)=0;
+% [drn_idx_x,drn_idx_y]=find(drone~=0);
+
+% % % for radial zone
+% % for i=size(z_zone,2):-1:1
+% %     z(((x+10).^2+(y).^2)<=z_zone(2,i))=z_zone(1,i);
+% % end
+
+z(atan2d(y,x+10)< -90 & atan2d(y,x+10)>-180)=z_zone(1,4);
+z(atan2d(y,x+10)<-110 & atan2d(y,x+10)>-160)=z_zone(1,3);
+z(atan2d(y,x+10)<-130 & atan2d(y,x+10)>-140)=z_zone(1,2);
+
+[tx_posx,tx_posy]=pol2cart(-[90,110,130,140,160,180]/180*pi,100+15);
+tx=["+45","+25","+5","-5","-25","-45"];
+
+
+z(x>-10)=0;
+z(y>0)=0;
+z(((x+10).^2+(y).^2)>100^2)=0;
+
+close
+g1=figure;
+
+
+
+contourf(x,y,z)
+text(tx_posx-10,tx_posy+5,tx)
+
+
+b=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
+g=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
+r=[0 0 0 0 0 0 0 0 0 0 0]+1;
+
+map = [ 1/.8    1/.8     1/.8
+    r(1) g(1)  b(1)
+    r(2) g(2)  b(2)
+    r(3) g(3)  b(3)
+    r(4) g(4)  b(4)
+    r(5) g(5)  b(5)
+    r(6) g(6)  b(6)
+    r(7) g(7)  b(7)
+    r(8) g(8)  b(8)
+    r(9) g(9)  b(9)
+    r(10) g(10) b(10)
+    r(11) g(11) b(11)]*.8;
+
+hold on
+fill(drone(1,:),drone(2,:),'b')
+colormap(g1,map)
+axis equal
+axis off
+%% something else
+
