@@ -350,7 +350,7 @@ z_zone=[100,75,50,10;5^2,25^2,50^2,70^2];
 drone=z+z_zone(2);
 drone_h=60; % drone body height
 drone_w=60; % drone body half width
-m1=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*(2*(-drone_w)*r_branch^2/(drone_w^2+r_branch^2)+drone_w));
+m1=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*())
 
 drone=[-drone_w,-drone_w,drone_w,drone_w,-drone_w*.9,-drone_w*.9, drone_w*.9,drone_w*.9,-drone_w*.9,-drone_w*.9,-drone_w;drone_h,0,0,drone_h,drone_h,drone_h*.9,drone_h*.9,drone_h*.1,drone_h*.1,drone_h,drone_h];
 % drone(x>-10&x<10&y>0&y<10)=100;
@@ -404,7 +404,7 @@ hold on
 fill(drone(1,:),drone(2,:),'b')
 colormap(g1,map)
 fimplicit(@(x,y) x^2+(y+d_branch/2)^2-(d_branch/2)^2,'k','LineWidth',3)
-fplot(@(x) m1*(x+drone_w))
+
 axis equal
 axis off
 %% something else
