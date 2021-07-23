@@ -306,18 +306,19 @@ grid on
 figure
 hold on
 perch_servo_pos=zeros(size(Data));
-fperch_servo_pos=perch_servo_pos;
+perch_success=perch_servo_pos;
 for i=1:n_data
+    perch_servo_pos(i)=Data(i).servo_pos(Data(i).index_impact);
     if Data(i).perch
-        perch_servo_pos(i)=Data(i).servo_pos(Data(i).index_impact);
+        perch_success(i)=true;
         a=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'o');
         a.MarkerEdgeColor=[0.4660 0.6740 0.1880];
         a.MarkerFaceColor=[0.4660 0.6740 0.1880];
     end
 end
+logical(perch_success);
 for i=1:n_data
     if ~Data(i).perch
-        fperch_servo_pos(i)=Data(i).servo_pos(Data(i).index_impact); % track failed perch
         if Data(i).servo_pos(Data(i).index_impact)<=max(perch_servo_pos) && Data(i).servo_pos(Data(i).index_impact)>=min(perch_servo_pos(perch_servo_pos>0))
             b=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'x');
             b.MarkerEdgeColor=[0.6350 0.0780 0.1840];
@@ -333,15 +334,16 @@ grid on
 %
 
 %% Perch branch size and arm angle
-servo_flat=1500; % XH430 0.088 deg per resolution
+servo_flat=1700; % XH430 0.088 deg per resolution
 r_spool=6; % spool radius
 l_t=10; % distance between joint and tendon hole
 perch_ang_arm=zeros(size(perch_servo_pos));
 fperch_ang_arm=perch_ang_arm;
-perch_ang_arm(perch_servo_pos~=0)=180-2*asind((l_t-(perch_servo_pos(perch_servo_pos~=0)-servo_flat)*0.088/180*pi*r_spool/2)/l_t); % servo->spool angle->tendon retraction->half internal angle->external angle
-fperch_ang_arm(fperch_servo_pos~=0)=180-2*asind((l_t-(fperch_servo_pos(fperch_servo_pos~=0)-servo_flat)*0.088/180*pi*r_spool/2)/l_t); % servo->spool angle->tendon retraction->half internal angle->external angle
+perch_ang_arm=180-2*asind((l_t-(perch_servo_pos-servo_flat)*0.088/180*pi*r_spool/2)/l_t); % servo->spool angle->tendon retraction->half internal angle->external angle
+[arm_xs,arm_ys]=pol2cart(perch_ang_arm(find(perch_success))/180*pi+pi,100);
+[arm_xf,arm_yf]=pol2cart(perch_ang_arm(find(~perch_success))/180*pi+pi,100);
 
-d_branch=110;
+d_branch=125;
 r_branch=d_branch/2;
 x=meshgrid([-110:.1:110]*5);
 y=x';
@@ -350,7 +352,7 @@ z_zone=[100,75,50,10;5^2,25^2,50^2,70^2];
 drone=z+z_zone(2);
 drone_h=60; % drone body height
 drone_w=60; % drone body half width
-m1=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*(2*(-drone_w)*r_branch^2/(drone_w^2+r_branch^2)+drone_w));
+m0=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*(2*(-drone_w)*r_branch^2/(drone_w^2+r_branch^2)+drone_w));
 
 drone=[-drone_w,-drone_w,drone_w,drone_w,-drone_w*.9,-drone_w*.9, drone_w*.9,drone_w*.9,-drone_w*.9,-drone_w*.9,-drone_w;drone_h,0,0,drone_h,drone_h,drone_h*.9,drone_h*.9,drone_h*.1,drone_h*.1,drone_h,drone_h];
 % drone(x>-10&x<10&y>0&y<10)=100;
@@ -378,10 +380,8 @@ close
 g1=figure;
 
 
-
 contourf(x,y,z)
 text(tx_posx-drone_w,tx_posy+5,tx)
-
 
 b=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
 g=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
@@ -404,7 +404,13 @@ hold on
 fill(drone(1,:),drone(2,:),'b')
 colormap(g1,map)
 fimplicit(@(x,y) x^2+(y+d_branch/2)^2-(d_branch/2)^2,'k','LineWidth',3)
-fplot(@(x) m1*(x+drone_w))
+
+l_arm=35*3;
+y2=-m0*l_arm/(1+m0^2)^.5;
+x2=-l_arm/(1+m0^2)^.5-drone_w;
+plot([-drone_w x2],[0 y2],'g','LineWidth',2)
+plot(arm_xs-drone_w,arm_ys,'go')
+plot(arm_xf-drone_w,arm_yf,'ro')
 axis equal
 axis off
 %% something else
