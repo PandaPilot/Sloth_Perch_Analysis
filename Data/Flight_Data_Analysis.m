@@ -196,9 +196,19 @@ if ~exist('processed')||~processed
         tmp1=find(Data(i).z>0.5,1,'last');
         %tmp=find(Data(i).jz==max(Data(i).jz));
         Data(i).index_impact=Data(i).vz==min(Data(i).vz(tmp:tmp1));
-        
+        Data(i).index_impact=find(Data(i).index_impact);
         processed=1;
+        Data(i).servo_impact=Data(i).servo_pos(Data(i).index_impact);
     end
+     [tmp2,I]=sort([Data.servo_impact]);
+     Data=Data(I);
+     ig=1; % grouping index
+     for i=1:n_data
+        if Data(i).servo_impact==1
+           grouping(ig,:)=[1,i]; 
+           ig=ig+1;
+        end
+     end
 else
     disp('Skip processing')
 end
@@ -210,32 +220,6 @@ close all
 %     hold on
 % end
 % grid on
-
-figure % t-z graph
-for i=1:n_data
-    if Data(i).perch
-        plot(Data(i).t,Data(i).z);
-    else
-        plot(Data(i).t,Data(i).z,'--');
-    end
-    hold on
-end
-xlim([-0.5 1.5])
-grid on
-
-figure % 3D xyz
-hold on
-for i=1:n_data
-    index_t=Data(i).t>=-1 & Data(i).t<=1.5;
-    if Data(i).perch
-        plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'LineWidth',2);
-    else
-        plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'--');
-    end
-    plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'o');
-end
-axis equal
-grid on
 %
 % figure % xyz at impact
 % for i=1:n_data
@@ -413,5 +397,30 @@ plot(arm_xs-drone_w,arm_ys,'go')
 plot(arm_xf-drone_w,arm_yf,'ro')
 axis equal
 axis off
-%% something else
+%% t-z graph
+% figure 
+% for i=1:n_data
+%     if Data(i).perch
+%         plot(Data(i).t,Data(i).z);
+%     else
+%         plot(Data(i).t,Data(i).z,'--');
+%     end
+%     hold on
+% end
+% xlim([-0.5 1.5])
+% grid on
+% 
+% figure % 3D xyz
+% hold on
+% for i=1:n_data
+%     index_t=Data(i).t>=-1 & Data(i).t<=1.5;
+%     if Data(i).perch
+%         plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'LineWidth',2);
+%     else
+%         plot3(Data(i).x(index_t),Data(i).y(index_t),Data(i).z(index_t),'--');
+%     end
+%     plot3(Data(i).x(Data(i).index_impact),Data(i).y(Data(i).index_impact),Data(i).z(Data(i).index_impact),'o');
+% end
+% axis equal
+% grid on
 
