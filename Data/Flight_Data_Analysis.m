@@ -223,34 +223,34 @@ close all
 
 %% x and vz at impact
 
-figure
-hold on
+% figure
+% hold on
 perch_servo_pos=zeros(size(Data));
 perch_success=perch_servo_pos;
 for i=1:n_data
     perch_servo_pos(i)=Data(i).servo_pos(Data(i).index_impact);
     if Data(i).perch
         perch_success(i)=true;
-        a=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'o');
-        a.MarkerEdgeColor=[0.4660 0.6740 0.1880];
-        a.MarkerFaceColor=[0.4660 0.6740 0.1880];
+%         a=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'o');
+%         a.MarkerEdgeColor=[0.4660 0.6740 0.1880];
+%         a.MarkerFaceColor=[0.4660 0.6740 0.1880];
     end
 end
 logical(perch_success);
-for i=1:n_data
-    if ~Data(i).perch
-        if Data(i).servo_pos(Data(i).index_impact)<=max(perch_servo_pos) && Data(i).servo_pos(Data(i).index_impact)>=min(perch_servo_pos(perch_servo_pos>0))
-            b=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'x');
-            b.MarkerEdgeColor=[0.6350 0.0780 0.1840];
-            b.MarkerSize=8;
-            b.LineWidth=1;
-        end
-    end
-end
-xlabel('servo pos')
-ylabel('v_z')
-%axis equal
-grid on
+% for i=1:n_data
+%     if ~Data(i).perch
+%         if Data(i).servo_pos(Data(i).index_impact)<=max(perch_servo_pos) && Data(i).servo_pos(Data(i).index_impact)>=min(perch_servo_pos(perch_servo_pos>0))
+%             b=plot(Data(i).servo_pos(Data(i).index_impact),Data(i).vz(Data(i).index_impact),'x');
+%             b.MarkerEdgeColor=[0.6350 0.0780 0.1840];
+%             b.MarkerSize=8;
+%             b.LineWidth=1;
+%         end
+%     end
+% end
+% xlabel('servo pos')
+% ylabel('v_z')
+% %axis equal
+% grid on
 %
 
 %% Perch branch size and arm angle
@@ -284,6 +284,7 @@ drone=[-drone_w,-drone_w,drone_w,drone_w,-drone_w*.9,-drone_w*.9, drone_w*.9,dro
 % %     z(((x+10).^2+(y).^2)<=z_zone(2,i))=z_zone(1,i);
 % % end
 i=find(max(grouping(:,1))==(grouping(:,1)));
+pct_group=[1 .75 .5 .25];
 
 zone(atan2d(y,x+drone_w)< 0 & atan2d(y,x+drone_w)>-180)=z_zone(1,4);
 zone(atan2d(y,x+drone_w)<perch_ang_arm(grouping(i+2,2))-180 & atan2d(y,x+drone_w)>perch_ang_arm(grouping(i-1,2)-grouping(i-1,1)+1)-180)=z_zone(1,3);
@@ -300,8 +301,9 @@ zone(((x+drone_w).^2+(y).^2)>100^2)=0;
 close
 g1=figure;
 
-
 contourf(x,y,zone)
+hold on
+
 
 b=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
 g=0:.1:1;%[0 0 0 0 0 0 0 0 0 0 0]+1;
@@ -320,10 +322,10 @@ map = [ 1/.8    1/.8     1/.8
     r(10) g(10) b(10)
     r(11) g(11) b(11)]*.8;
 
-hold on
+
 fill(drone(1,:),drone(2,:),'b')
 colormap(g1,map)
-fimplicit(@(x,y) x^2+(y+d_branch/2)^2-(d_branch/2)^2,'k','LineWidth',3);
+%fimplicit(@(x,y) x^2+(y+d_branch/2)^2-(d_branch/2)^2,'k','LineWidth',3);
 
 l_arm=35*3;
 y2=-m0*l_arm/(1+m0^2)^.5;
@@ -339,6 +341,12 @@ end
 
 axis equal
 axis off
+
+J = imread('drone.jpg');
+image('CData',J,'XData',[-drone_w drone_w],'YData',[0 drone_h])
+%imshow(J);
+disp("Done")
+
 %% t-z graph
 % figure
 % for i=1:n_data
