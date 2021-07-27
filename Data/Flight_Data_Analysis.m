@@ -284,7 +284,7 @@ drone=[-drone_w,-drone_w,drone_w,drone_w,-drone_w*.9,-drone_w*.9, drone_w*.9,dro
 % %     z(((x+10).^2+(y).^2)<=z_zone(2,i))=z_zone(1,i);
 % % end
 i=find(max(grouping(:,1))==(grouping(:,1)));
-pct_group=[0.4 .6 .8 1];
+pct_group=[1 .8 .6 .4];
 high_s=(perch_ang_arm>=optimal_arm_ang)&[Data.perch]; % high side successful perch
 low_s=(perch_ang_arm<optimal_arm_ang)&[Data.perch];
 
@@ -299,26 +299,28 @@ prob_l=[];
 for j=1:numel(low_s)
     prob_l(j)=sum(low_s((numel(low_s)-j+1):end))/j;
 end
-
+zone_r=100*((1-.5)+.5*[0:1/(numel(pct_group)):1]);
+gap=1.2;
 for i=1:numel(pct_group)
     tmp3=abs(prob_h-pct_group(i));
     tmp4=abs(prob_l-pct_group(i));
     pct_i(1,i)= find(tmp3==min(tmp3),1,'last')-1;% percentage index (optimal +- ...) (1,:)=high (2,:)=low
     pct_i(2,i)= find(tmp4==min(tmp4),1,'last')-1;
-    zone(atan2d(y,x+drone_w)<perch_ang_arm(find(perch_ang_arm>=optimal_arm_ang,1)+pct_i(1,i))-180 & atan2d(y,x+drone_w)>optimal_arm_ang-180)=prob_h(pct_i(1,i)+1);
-    zone(atan2d(y,x+drone_w)>perch_ang_arm(find(perch_ang_arm<optimal_arm_ang,1,'last')-pct_i(2,i))-180 & atan2d(y,x+drone_w)<optimal_arm_ang-180)=prob_l(pct_i(2,i)+1);
+    zone(atan2d(y,x+drone_w)<perch_ang_arm(find(perch_ang_arm>=optimal_arm_ang,1)+pct_i(1,i))-180 & atan2d(y,x+drone_w)>optimal_arm_ang-180  & (((x+drone_w).^2+(y).^2)>(zone_r(i)+gap)^2) & (((x+drone_w).^2+(y).^2)<(zone_r(i+1)-gap)^2))=prob_h(pct_i(1,i)+1); % high side
+    zone(atan2d(y,x+drone_w)>perch_ang_arm(find(perch_ang_arm<optimal_arm_ang,1,'last')-pct_i(2,i))-180 & atan2d(y,x+drone_w)<optimal_arm_ang-180 & (((x+drone_w).^2+(y).^2)>(zone_r(i)+gap)^2) & (((x+drone_w).^2+(y).^2)<(zone_r(i+1)-gap)^2))=prob_l(pct_i(2,i)+1); % low side
 end
+zone(((x+drone_w).^2+(y).^2)>100^2)=0;
 % zone(atan2d(y,x+drone_w)< 0 & atan2d(y,x+drone_w)>-180)=z_zone(1,4);
 % zone(atan2d(y,x+drone_w)<perch_ang_arm(grouping(i+2,2))-180 & atan2d(y,x+drone_w)>perch_ang_arm(grouping(i-1,2)-grouping(i-1,1)+1)-180)=z_zone(1,3);
 % zone(atan2d(y,x+drone_w)<perch_ang_arm(grouping(i,2))-180 & atan2d(y,x+drone_w)>perch_ang_arm(grouping(i,2)-grouping(i,1)+1)-180)=z_zone(1,2);
 
-[tx_posx,tx_posy]=pol2cart(([45,25,5,-5,-25,-45]+optimal_arm_ang)/180*pi+pi,100+15);
-tx=["+45","+25","+5","-5","-25","-45"];
+[tx_posx,tx_posy]=pol2cart(([90,75,60,45,30,15,-15,-30,-45,-60,-75,-90]+optimal_arm_ang)/180*pi+pi,100+15);
+tx=["+90","+75","+60","+45","+30","+15","-15","-30","-45","-60","-75","-90"];
 
 
 % zone(x>-drone_w)=0;
 % zone(y>0)=0;
-zone(((x+drone_w).^2+(y).^2)>100^2)=0;
+
 
 close
 g1=figure;
@@ -352,7 +354,7 @@ colormap(g1,map)
 l_arm=35*3;
 y2=-m0*l_arm/(1+m0^2)^.5;
 x2=-l_arm/(1+m0^2)^.5-drone_w;
-plot([-drone_w x2],[0 y2],'g','LineWidth',2)
+plot([-drone_w x2],[0 y2],'k','LineWidth',4)
 plot(arm_xs-drone_w,arm_ys,'go')
 plot(arm_xf-drone_w,arm_yf,'ro');
 
