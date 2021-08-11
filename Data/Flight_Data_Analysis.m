@@ -270,7 +270,7 @@ y=x';
 zone=zeros(size(x));
 z_zone=[100,75,50,10;5^2,25^2,50^2,70^2];
 drone=zone+z_zone(2);
-drone_h=60; % drone body height
+drone_h=72; % drone body height
 drone_w=60; % drone body half width
 m0=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*(2*(-drone_w)*r_branch^2/(drone_w^2+r_branch^2)+drone_w)); % arm gradient
 optimal_arm_ang=atan2d(m0,1);
@@ -347,7 +347,7 @@ map = [ 1/.8    1/.8     1/.8
     r(11) g(11) b(11)]*.8;
 
 
-fill(drone(1,:),drone(2,:),'b')
+%fill(drone(1,:),drone(2,:),'b') % drone body fill
 colormap(g1,map)
 %fimplicit(@(x,y) x^2+(y+d_branch/2)^2-(d_branch/2)^2,'k','LineWidth',3);
 
@@ -366,8 +366,19 @@ end
 axis equal
 axis off
 
-J = imread('drone.jpg');
-image('CData',J,'XData',[-drone_w drone_w],'YData',[0 drone_h])
+J = imread('drone_fig/sloth_body.png');
+Jtp=ones(size(J,1),size(J,2));
+Jtp=Jtp-all(J==255,3);
+image('CData',J,'XData',[-drone_w drone_w],'YData',[0 drone_h],'AlphaData',Jtp)
+
+K = imread('drone_fig/sloth_arm.png');
+Ktp=ones(size(K,1),size(K,2));
+Ktp=Ktp-all(K==255,3);
+K = imrotate(K,-optimal_arm_ang);
+Ktp = imrotate(Ktp,-optimal_arm_ang);
+image('CData',K,'AlphaData',Ktp)
+
+
 %imshow(J);
 disp("Done")
 

@@ -270,7 +270,7 @@ y=x';
 zone=zeros(size(x));
 z_zone=[100,75,50,10;5^2,25^2,50^2,70^2];
 drone=zone+z_zone(2);
-drone_h=60; % drone body height
+drone_h=72; % drone body height
 drone_w=60; % drone body half width
 m0=(-2*drone_w^2*r_branch)/((r_branch^2+drone_w^2)*(2*(-drone_w)*r_branch^2/(drone_w^2+r_branch^2)+drone_w)); % arm gradient
 optimal_arm_ang=atan2d(m0,1);
@@ -299,8 +299,8 @@ prob_l=[];
 for j=1:numel(low_s)
     prob_l(j)=sum(low_s((numel(low_s)-j+1):end))/j;
 end
-zone_r=100*((1-.4)+.4*[0:1/(numel(pct_group)):1]);
-gap=2;
+zone_r=100*((1-.5)+.5*[0:1/(numel(pct_group)):1]);
+gap=1.2;
 for i=1:numel(pct_group)
     tmp3=abs(prob_h-pct_group(i));
     tmp4=abs(prob_l-pct_group(i));
@@ -314,8 +314,8 @@ zone(((x+drone_w).^2+(y).^2)>100^2)=0;
 % zone(atan2d(y,x+drone_w)<perch_ang_arm(grouping(i+2,2))-180 & atan2d(y,x+drone_w)>perch_ang_arm(grouping(i-1,2)-grouping(i-1,1)+1)-180)=z_zone(1,3);
 % zone(atan2d(y,x+drone_w)<perch_ang_arm(grouping(i,2))-180 & atan2d(y,x+drone_w)>perch_ang_arm(grouping(i,2)-grouping(i,1)+1)-180)=z_zone(1,2);
 
-[tx_posx,tx_posy]=pol2cart(([45,30,15,-15,-30,-45]+optimal_arm_ang)/180*pi+pi,100+15);
-tx=["","","60","+45","+30","+15","-15","-30","-45"];
+[tx_posx,tx_posy]=pol2cart(([90,75,60,45,30,15,-15,-30,-45,-60,-75,-90]+optimal_arm_ang)/180*pi+pi,100+15);
+tx=["+90","+75","+60","+45","+30","+15","-15","-30","-45","-60","-75","-90"];
 
 
 % zone(x>-drone_w)=0;
@@ -354,7 +354,7 @@ colormap(g1,map)
 l_arm=35*3;
 y2=-m0*l_arm/(1+m0^2)^.5;
 x2=-l_arm/(1+m0^2)^.5-drone_w;
-plot([-drone_w x2],[0 y2],'g','LineWidth',2)
+plot([-drone_w x2],[0 y2],'k','LineWidth',4)
 plot(arm_xs-drone_w,arm_ys,'go')
 plot(arm_xf-drone_w,arm_yf,'ro');
 
@@ -366,8 +366,11 @@ end
 axis equal
 axis off
 
-J = imread('drone.jpg');
+J = imread('drone_fig/sloth_body.png');
 image('CData',J,'XData',[-drone_w drone_w],'YData',[0 drone_h])
+
+K = imread('drone_fig/sloth_body.png');
+image('CData',K,'XData',[-drone_w drone_w],'YData',[0 drone_h])
 %imshow(J);
 disp("Done")
 
