@@ -354,7 +354,7 @@ colormap(g1,map)
 l_arm=35*3;
 y2=-m0*l_arm/(1+m0^2)^.5;
 x2=-l_arm/(1+m0^2)^.5-drone_w;
-plot([-drone_w x2],[0 y2],'k','LineWidth',4)
+%plot([-drone_w x2],[0 y2],'k','LineWidth',4) % drone arm
 plot(arm_xs-drone_w,arm_ys,'go')
 plot(arm_xf-drone_w,arm_yf,'ro');
 
@@ -376,7 +376,7 @@ Ktp=ones(size(K,1),size(K,2));
 Ktp=Ktp-all(K==255,3);
 K = imrotate(K,-optimal_arm_ang);
 Ktp = imrotate(Ktp,-optimal_arm_ang);
-image('CData',K,'AlphaData',Ktp)
+image('CData',K,'XData',[-140*cosd(optimal_arm_ang)-30*sind(optimal_arm_ang)-drone_w -drone_w],'YData',[-140*sind(optimal_arm_ang) 30*cosd(optimal_arm_ang)],'AlphaData',Ktp)
 
 
 %imshow(J);
